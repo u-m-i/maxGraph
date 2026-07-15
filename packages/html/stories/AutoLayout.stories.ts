@@ -68,6 +68,9 @@ export default {
 };
 
 const Template = ({ label, ...args }: Record<string, string>) => {
+
+  //! Recommendation for a better reading: give special attention to the invocations of the executeLayout function
+
   const container = createGraphContainer(args);
 
   if (!args.contextMenu) InternalEvent.disableContextMenu(container);
@@ -109,11 +112,12 @@ const Template = ({ label, ...args }: Record<string, string>) => {
       _me: InternalMouseEvent
     ): Cell {
       const cell = super.connect(edge, terminal, isSource, _isClone, _me);
-      executeLayout();
+      executeLayout();        // HierarchyLayout.execute()
       return cell;
     }
   }
 
+  // Remember that executeLayout is invoke here too
   class MyCustomGraph extends Graph {
     constructor(container: HTMLElement, plugins: GraphPluginConstructor[]) {
       super(container, undefined, plugins);
@@ -122,17 +126,17 @@ const Template = ({ label, ...args }: Record<string, string>) => {
     override createEdgeHandler(
       state: CellState,
       _edgeStyle: EdgeStyleFunction | null
-    ): EdgeHandler {
+    ): MyCustomEdgeHandler {
       return new MyCustomEdgeHandler(state);
     }
 
-    override createCellRenderer() {
+    override createCellRenderer(): MyCustomCellRenderer {
       return new MyCustomCellRenderer();
     }
 
-    override resizeCell = (cell: Cell, bounds: Rectangle, recurse?: boolean): Cell => {
+    override resizeCell(cell: Cell, bounds: Rectangle, recurse?: boolean): Cell {
       const resizedCell = super.resizeCell(cell, bounds, recurse);
-      executeLayout();
+      executeLayout();        // HierarchyLayout.execute()
       return resizedCell;
     };
   }
@@ -168,7 +172,7 @@ const Template = ({ label, ...args }: Record<string, string>) => {
       // New API for animating graph layout results asynchronously
       const morph = new Morphing(graph);
       morph.addListener(InternalEvent.DONE, () => {
-        graph.getDataModel().endUpdate();
+        graph.getDataModel().endUpdate();       //! Do not forget to end the update
         post?.();
       });
       morph.startAnimation();
@@ -199,7 +203,7 @@ const Template = ({ label, ...args }: Record<string, string>) => {
               position: [geo!.x, geo!.y],
               size: [80, 30],
             });
-            addOverlay(vertex);
+            addOverlay(vertex);       // Hook this function again for the next child
             graph.view.refresh();
             graph.insertEdge({
               parent,
